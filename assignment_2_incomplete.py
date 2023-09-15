@@ -29,7 +29,7 @@ def newyorker_caption_contest_idefics(args):
     from transformers import IdeficsForVisionText2Text, AutoProcessor
 
     print("Loading model")
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cpu" #"cuda" if torch.cuda.is_available() else "cpu"
 
     model = IdeficsForVisionText2Text.from_pretrained(args.idefics_checkpoint, torch_dtype=torch.bfloat16).to(device)
     processor = AutoProcessor.from_pretrained(args.idefics_checkpoint)
@@ -157,11 +157,12 @@ def newyorker_caption_contest_llama2(args):
             \nYou are a cartoon comic reviewer and your job is to explain the jokes behind a give comic with a caption.\
             \n<</SYS>>\
             \n\
-            \nWhat is the joke in this image?", nyc_data_train_two[0]['image'], "Caption:", nyc_data_train_two[0]['caption_choices'], "[/INST]", \
-            nyc_data_train_two[0]['target'], "</s>", \
-            "<s>[INST] And why is this image funny?", nyc_data_train_two[1]['image'], "Caption:", nyc_data_train_two[1]['caption_choices'], "[/INST]", \
-            nyc_data_train_two[1]['target'], "</s>", \
-            "<s>[INST] And what is the joke in this one?", val_inst['image'], "Caption:", val_inst['caption_choices'], "[/INST]"
+            \nWhat is the joke in this image? " + nyc_data_train_two[0]['input'] + " [/INST]" + \
+            nyc_data_train_two[0]['target'] + " </s>" + \
+            "<s>[INST] And why is this image funny? " + nyc_data_train_two[1]['input'] + " [/INST]" + \
+            nyc_data_train_two[1]['target'] + " </s>" + \
+            "<s>[INST] And what is the joke in this one? " + val_inst['input'] + " [/INST]"
+    
 
         sequences = pipeline(
             prompt,
@@ -170,8 +171,10 @@ def newyorker_caption_contest_llama2(args):
             max_length=1024,
         )
         
+
         gen_expl = sequences[0]['generated_text'].split("/INST] ")[-1]
         nyc_data_five_val[i]['generated_llama2']=gen_expl
+
 
     filename = 'out/val.jsonl'
     with jsonlines.open(filename, mode='w') as writer:
